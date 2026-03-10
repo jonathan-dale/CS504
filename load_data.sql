@@ -1,0 +1,104 @@
+--
+-- To load data into local database, from the same directory, or use the full path.
+-- psql -h 127.0.0.1 -p 5432 -U postgres -d cs-504 -f load_data.sql
+
+
+-- ============================================
+-- 1. Drop tables (optional, for a clean reload)
+-- ============================================
+DROP TABLE IF EXISTS authors        CASCADE;
+DROP TABLE IF EXISTS catalog_tbl    CASCADE;
+DROP TABLE IF EXISTS genre          CASCADE;
+DROP TABLE IF EXISTS member_tbl     CASCADE;
+DROP TABLE IF EXISTS staff          CASCADE;
+DROP TABLE IF EXISTS material       CASCADE;
+DROP TABLE IF EXISTS authorship     CASCADE;
+DROP TABLE IF EXISTS borrow         CASCADE;
+-- ============================================
+-- 2. Create tables
+--    table_name: attributes
+--    authors:author_id,name,nationality
+--    authorship:authorship_id,author_id,material_id
+--    borrow:borrow_id,material_id,member_id,staff_id,borrow_date,due_date,return_date
+--    catalog:catalog_id,name,location
+--    genre:genre_id,name,description
+--    material:material_id,title,publication_date,catalog_id,genre_id
+--    member_tbl:member_id,name,contact_info,join_date
+--    staff:staff_id,name,contact_info,job_title,hire_date
+-- ============================================
+
+-- Notice: the first 5 tables have no dependencies 
+CREATE TABLE authors (
+    author_id    INTEGER PRIMARY KEY,
+    name         TEXT NOT NULL,
+    nationality  TEXT
+);
+
+CREATE TABLE catalog_tbl (
+    catalog_id   INTEGER PRIMARY KEY,
+    name         TEXT NOT NULL,
+    location     TEXT
+);
+
+CREATE TABLE genre (
+    genre_id     INTEGER PRIMARY KEY,
+    name         TEXT NOT NULL,
+    description  TEXT
+);
+
+CREATE TABLE member_tbl (
+    member_id    INTEGER PRIMARY KEY,
+    name         TEXT NOT NULL,
+    contact_info TEXT,
+    join_date    DATE
+);
+
+CREATE TABLE staff (
+    staff_id     INTEGER PRIMARY KEY,
+    name         TEXT NOT NULL,
+    contact_info TEXT,
+    job_title    TEXT,
+    hire_date    DATE
+);
+
+-- Notice: Material table must be created before authorship and borrow
+
+CREATE TABLE material (
+    material_id      INTEGER PRIMARY KEY,
+    title            TEXT NOT NULL,
+    publication_date INTEGER,
+    catalog_id       INTEGER REFERENCES catalog_tbl(catalog_id),
+    genre_id         INTEGER REFERENCES genre(genre_id)
+);
+
+CREATE TABLE authorship (
+    authorship_id INTEGER PRIMARY KEY,
+    author_id     INTEGER REFERENCES authors(author_id),
+    material_id   INTEGER REFERENCES material(material_id)
+);
+
+CREATE TABLE borrow (
+    borrow_id    INTEGER PRIMARY KEY,
+    material_id  INTEGER REFERENCES material(material_id),
+    member_id    INTEGER REFERENCES member_tbl(member_id),
+    staff_id     INTEGER REFERENCES staff(staff_id),
+    borrow_date  DATE,
+    due_date     DATE,
+    return_date  DATE
+);
+
+
+-- ============================================
+-- 3. Load data from CSV files
+--    Paths are relative
+--    Keep same order as creation
+-- ============================================
+
+\copy authors FROM './Data/Authors.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
+\copy catalog_tbl FROM './Data/Catalog.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
+\copy genre FROM './Data/Genre.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
+\copy member_tbl FROM './Data/Member.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
+\copy staff FROM './Data/Staff.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
+\copy material FROM './Data/Material.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
+\copy authorship FROM './Data/Authorship.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
+\copy borrow FROM './Data/Borrow.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '', QUOTE '"');
