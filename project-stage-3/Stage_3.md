@@ -1,3 +1,11 @@
+---
+title: CS 504 Project Stage 3
+author: "Jonathan Dale"
+date: "2026-04-12"
+output: pdf
+git: https://github.com/jonathan-dale/CS504
+---
+
 # Project stage 3
 
 Runnable DDL for both features lives in [Stage_3.sql](Stage_3.sql) and should be applied **after** [load_data.sql](../load_data.sql) so base tables (including `member_tbl`) already exist.
