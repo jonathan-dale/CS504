@@ -1,6 +1,6 @@
 # Project stage 3
 
-Runnable DDL for both features lives in [Stage_3.sql](Stage_3.sql) and should be applied **after** [load_data.sql](load_data.sql) so base tables (including `member_tbl`) already exist.
+Runnable DDL for both features lives in [Stage_3.sql](Stage_3.sql) and should be applied **after** [load_data.sql](../load_data.sql) so base tables (including `member_tbl`) already exist.
 
 ## Feature 1.
 ### Overdue Alert
