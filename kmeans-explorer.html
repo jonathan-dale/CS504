@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>K-Means Clustering — Interactive Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #f0883e;
+      --c1: #ff6b6b;
+      --c2: #4ecdc4;
+      --c3: #45b7d1;
+      --c4: #f7dc6f;
+      --c5: #bb8fce;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.2rem;
+      color: var(--accent);
+      margin-bottom: .3rem;
+      letter-spacing: -.02em;
+    }
+
+    p.sub {
+      color: var(--muted);
+      font-size: .95rem;
+      margin-bottom: 1.5rem;
+      max-width: 620px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .container {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .canvas-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      border-radius: 8px;
+      cursor: crosshair;
+    }
+
+    .controls {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .controls label {
+      font-size: .82rem;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .controls select, .controls button {
+      width: 100%;
+      padding: .65rem .8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .controls button {
+      font-weight: 700;
+      border: none;
+    }
+
+    .controls button.primary {
+      background: var(--accent);
+      color: #0d1117;
+    }
+
+    .controls button.primary:hover {
+      filter: brightness(1.15);
+    }
+
+    .controls button.secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .controls button.secondary:hover {
+      background: #444c56;
+    }
+
+    .info-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .8rem 1rem;
+      font-size: .85rem;
+      line-height: 1.6;
+    }
+
+    .info-box .step-label {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: .9rem;
+    }
+
+    .info-box .detail {
+      color: var(--muted);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: .3rem;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    .legend span i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .how-it-works {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 860px;
+      margin-top: 1.5rem;
+      line-height: 1.7;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    .how-it-works h2 {
+      font-family: 'DM Serif Display', serif;
+      color: var(--text);
+      font-size: 1.3rem;
+      margin-bottom: .8rem;
+    }
+
+    .how-it-works ol {
+      padding-left: 1.4rem;
+    }
+
+    .how-it-works li {
+      margin-bottom: .5rem;
+    }
+
+    .how-it-works strong {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <h1>K-Means Clustering</h1>
+  <p class="sub">Click the canvas to place points, pick <strong>k</strong>, then step through the algorithm to watch clusters form in real time.</p>
+
+  <div class="container">
+    <div class="canvas-wrap">
+      <canvas id="cv" width="560" height="480"></canvas>
+    </div>
+
+    <div class="controls">
+      <label>Number of clusters (k)</label>
+      <select id="kSelect">
+        <option value="2">k = 2</option>
+        <option value="3" selected>k = 3</option>
+        <option value="4">k = 4</option>
+        <option value="5">k = 5</option>
+      </select>
+
+      <button class="primary" id="btnGenerate">Generate Random Points</button>
+      <button class="primary" id="btnInit">Initialize Centroids</button>
+      <button class="primary" id="btnStep">Step (Assign + Move)</button>
+      <button class="primary" id="btnRun">Run to Convergence</button>
+      <button class="secondary" id="btnReset">Reset Everything</button>
+
+      <div class="info-box">
+        <div class="step-label" id="stepLabel">Ready</div>
+        <div class="detail" id="stepDetail">Add points by clicking the canvas, or generate random ones. Then initialize centroids to begin.</div>
+      </div>
+
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+
+  <div class="how-it-works">
+    <h2>How it works</h2>
+    <ol>
+      <li><strong>Choose k</strong> — decide how many clusters you expect.</li>
+      <li><strong>Initialize</strong> — place k centroids (diamonds) at random data-point positions.</li>
+      <li><strong>Assign</strong> — color each point by its nearest centroid.</li>
+      <li><strong>Move</strong> — shift each centroid to the mean of its assigned points.</li>
+      <li><strong>Repeat</strong> steps 3–4 until assignments stop changing (convergence).</li>
+    </ol>
+  </div>
+
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    const COLORS = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7dc6f', '#bb8fce'];
+
+    let points = [];
+    let centroids = [];
+    let assignments = [];
+    let k = 3;
+    let iteration = 0;
+    let converged = false;
+    let phase = 'idle';
+
+    const kSel = document.getElementById('kSelect');
+    const stepLabel = document.getElementById('stepLabel');
+    const stepDetail = document.getElementById('stepDetail');
+    const legend = document.getElementById('legend');
+
+    kSel.addEventListener('change', () => { k = parseInt(kSel.value); });
+
+    cv.addEventListener('click', e => {
+      if (phase === 'running') return;
+      const r = cv.getBoundingClientRect();
+      points.push({ x: e.clientX - r.left, y: e.clientY - r.top });
+      assignments = new Array(points.length).fill(-1);
+      centroids = [];
+      iteration = 0;
+      converged = false;
+      phase = 'idle';
+      draw();
+      setStatus('Ready', 'Added point. Total: ' + points.length + ' points.');
+    });
+
+    document.getElementById('btnGenerate').addEventListener('click', () => {
+      points = [];
+      centroids = [];
+      assignments = [];
+      iteration = 0;
+      converged = false;
+      phase = 'idle';
+      const clusters = Math.max(2, k);
+      for (let c = 0; c < clusters; c++) {
+        const cx = 100 + Math.random() * (cv.width - 200);
+        const cy = 100 + Math.random() * (cv.height - 200);
+        const n = 30 + Math.floor(Math.random() * 30);
+        for (let i = 0; i < n; i++) {
+          points.push({
+            x: cx + (Math.random() - .5) * 160,
+            y: cy + (Math.random() - .5) * 160
+          });
+        }
+      }
+      assignments = new Array(points.length).fill(-1);
+      draw();
+      setStatus('Ready', points.length + ' random points generated. Now click "Initialize Centroids".');
+    });
+
+    document.getElementById('btnInit').addEventListener('click', () => {
+      if (points.length < k) {
+        setStatus('Error', 'Need at least ' + k + ' points!');
+        return;
+      }
+      centroids = [];
+      const idxs = new Set();
+      while (idxs.size < k) idxs.add(Math.floor(Math.random() * points.length));
+      idxs.forEach(i => centroids.push({ x: points[i].x, y: points[i].y }));
+      assignments = new Array(points.length).fill(-1);
+      iteration = 0;
+      converged = false;
+      phase = 'initialized';
+      draw();
+      setStatus('Centroids Placed', k + ' centroids randomly placed (diamonds). Click "Step" to assign points.');
+      updateLegend();
+    });
+
+    document.getElementById('btnStep').addEventListener('click', () => {
+      if (centroids.length === 0) { setStatus('Error', 'Initialize centroids first!'); return; }
+      if (converged) { setStatus('Converged', 'Already converged at iteration ' + iteration + '.'); return; }
+      doStep();
+      draw();
+    });
+
+    document.getElementById('btnRun').addEventListener('click', () => {
+      if (centroids.length === 0) { setStatus('Error', 'Initialize centroids first!'); return; }
+      if (converged) { setStatus('Converged', 'Already converged.'); return; }
+      phase = 'running';
+      runToConvergence();
+    });
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      points = [];
+      centroids = [];
+      assignments = [];
+      iteration = 0;
+      converged = false;
+      phase = 'idle';
+      legend.innerHTML = '';
+      draw();
+      setStatus('Ready', 'Canvas cleared. Click to add points or generate random ones.');
+    });
+
+    function dist(a, b) {
+      return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+    }
+
+    function doStep() {
+      const oldAssign = [...assignments];
+
+      // Assign each point to nearest centroid
+      for (let i = 0; i < points.length; i++) {
+        let minD = Infinity, minC = 0;
+        for (let c = 0; c < centroids.length; c++) {
+          const d = dist(points[i], centroids[c]);
+          if (d < minD) { minD = d; minC = c; }
+        }
+        assignments[i] = minC;
+      }
+
+      // Move centroids to cluster mean
+      for (let c = 0; c < centroids.length; c++) {
+        let sx = 0, sy = 0, cnt = 0;
+        for (let i = 0; i < points.length; i++) {
+          if (assignments[i] === c) { sx += points[i].x; sy += points[i].y; cnt++; }
+        }
+        if (cnt > 0) centroids[c] = { x: sx / cnt, y: sy / cnt };
+      }
+
+      iteration++;
+
+      let same = true;
+      for (let i = 0; i < assignments.length; i++) {
+        if (assignments[i] !== oldAssign[i]) { same = false; break; }
+      }
+
+      if (same && iteration > 1) {
+        converged = true;
+        setStatus('Converged!', 'No points changed clusters. Final result after ' + iteration + ' iterations.');
+      } else {
+        setStatus('Iteration ' + iteration,
+          'Points assigned to nearest centroid, centroids moved to cluster means.');
+      }
+      phase = 'stepped';
+    }
+
+    async function runToConvergence() {
+      let safety = 0;
+      while (!converged && safety < 200) {
+        doStep();
+        draw();
+        await new Promise(r => setTimeout(r, 320));
+        safety++;
+      }
+      phase = 'stepped';
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+
+      // Grid
+      for (let x = 0; x < cv.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, cv.height);
+        ctx.strokeStyle = '#1a2030'; ctx.lineWidth = 1; ctx.stroke();
+      }
+      for (let y = 0; y < cv.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cv.width, y);
+        ctx.strokeStyle = '#1a2030'; ctx.lineWidth = 1; ctx.stroke();
+      }
+
+      // Lines from points to centroids
+      if (centroids.length > 0) {
+        ctx.globalAlpha = 0.15;
+        for (let i = 0; i < points.length; i++) {
+          const cIdx = assignments[i];
+          if (cIdx < 0) continue;
+          ctx.strokeStyle = COLORS[cIdx % COLORS.length];
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(points[i].x, points[i].y);
+          ctx.lineTo(centroids[cIdx].x, centroids[cIdx].y);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // Points
+      for (let i = 0; i < points.length; i++) {
+        const cIdx = assignments[i];
+        const color = cIdx >= 0 ? COLORS[cIdx % COLORS.length] : '#555e68';
+        ctx.beginPath();
+        ctx.arc(points[i].x, points[i].y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      // Centroids (diamonds)
+      for (let c = 0; c < centroids.length; c++) {
+        const ct = centroids[c];
+        const color = COLORS[c % COLORS.length];
+        ctx.save();
+        ctx.translate(ct.x, ct.y);
+        ctx.rotate(Math.PI / 4);
+        ctx.beginPath();
+        ctx.rect(-10, -10, 20, 20);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function setStatus(label, detail) {
+      stepLabel.textContent = label;
+      stepDetail.textContent = detail;
+    }
+
+    function updateLegend() {
+      legend.innerHTML = '';
+      for (let c = 0; c < k; c++) {
+        const s = document.createElement('span');
+        s.innerHTML = '<i style="background:' + COLORS[c % COLORS.length] + '"></i>Cluster ' + (c + 1);
+        legend.appendChild(s);
+      }
+      const s2 = document.createElement('span');
+      s2.innerHTML = '<i style="background:#fff;transform:rotate(45deg);border-radius:0"></i>Centroid';
+      legend.appendChild(s2);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
